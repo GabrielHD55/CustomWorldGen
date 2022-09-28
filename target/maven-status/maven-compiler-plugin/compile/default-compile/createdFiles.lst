@@ -1,9 +1,10 @@
 com\gabrielhd\worldgen\Utils\NoiseUtils.class
-com\gabrielhd\worldgen\CustomWorldGen$1.class
 com\gabrielhd\worldgen\Builder\GeneratorConfiguration$StructureInfo.class
 com\gabrielhd\worldgen\Builder\GeneratorConfiguration$StructureGeneration.class
+com\gabrielhd\worldgen\CustomWorldGenAPI$1.class
 com\gabrielhd\worldgen\Builder\GeneratorConfiguration$SliderGeneration.class
 com\gabrielhd\worldgen\CustomWorldCreator.class
+com\gabrielhd\worldgen\CustomWorldGenAPI.class
 com\gabrielhd\worldgen\CustomWorldGen.class
 com\gabrielhd\worldgen\Builder\GeneratorConfiguration$RandomGenerationType.class
 com\gabrielhd\worldgen\Builder\GeneratorConfiguration$SamplingGeneration.class

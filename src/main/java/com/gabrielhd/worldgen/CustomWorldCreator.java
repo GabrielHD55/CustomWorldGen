@@ -37,6 +37,6 @@ public class CustomWorldCreator extends WorldCreator {
 
     @Override
     public World createWorld() {
-        return CustomWorldGen.createWorld(this);
+        return CustomWorldGenAPI.createWorld(this);
     }
 }

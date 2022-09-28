@@ -10,7 +10,6 @@ import java.util.HashMap;
 @Getter @Setter
 public class GeneratorConfiguration {
 
-    private RandomGenerationType randomGenerationType = RandomGenerationType.XOROSHIRO;
     private StructureGeneration structureGeneration = new StructureGeneration();
     private NoiseGeneration noiseGeneration = new NoiseGeneration();
     private Material defaultBlock = Material.STONE;
@@ -22,6 +21,7 @@ public class GeneratorConfiguration {
     private boolean noiseCavesEnabled = true;
     private boolean oreVeinsEnabled = true;
     private boolean noodleCavesEnabled = true;
+    private boolean legacyRandomSource;
     private boolean canGenerateStructures;
     private boolean canGenerateDecoration;
 
@@ -45,12 +45,6 @@ public class GeneratorConfiguration {
         if (noiseGeneration == null)
             throw new IllegalArgumentException("NoiseGeneration can not be null!");
         this.noiseGeneration = noiseGeneration;
-    }
-
-    public void setRandomGenerationType(RandomGenerationType randomGenerationType) {
-        if (randomGenerationType == null)
-            throw new IllegalArgumentException("RandomGenerationType can not be null!");
-        this.randomGenerationType = randomGenerationType;
     }
 
     public void setStructureGeneration(StructureGeneration structureGeneration) {
