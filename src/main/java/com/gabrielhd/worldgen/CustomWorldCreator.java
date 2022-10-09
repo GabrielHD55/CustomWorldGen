@@ -1,7 +1,7 @@
 package com.gabrielhd.worldgen;
 
-import com.gabrielhd.worldgen.Builder.EnvironmentBuilder;
-import com.gabrielhd.worldgen.Builder.GeneratorConfiguration;
+import com.gabrielhd.worldgen.builder.EnvironmentBuilder;
+import com.gabrielhd.worldgen.builder.GeneratorConfiguration;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
 

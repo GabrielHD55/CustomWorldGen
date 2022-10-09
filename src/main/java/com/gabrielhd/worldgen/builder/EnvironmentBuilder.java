@@ -1,4 +1,4 @@
-package com.gabrielhd.worldgen.Builder;
+package com.gabrielhd.worldgen.builder;
 
 import lombok.Getter;
 import org.bukkit.NamespacedKey;

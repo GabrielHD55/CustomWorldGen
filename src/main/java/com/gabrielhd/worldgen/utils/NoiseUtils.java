@@ -1,4 +1,4 @@
-package com.gabrielhd.worldgen.Utils;
+package com.gabrielhd.worldgen.utils;
 
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;

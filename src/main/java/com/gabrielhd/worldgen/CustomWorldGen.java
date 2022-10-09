@@ -1,22 +1,14 @@
 package com.gabrielhd.worldgen;
 
-import com.gabrielhd.worldgen.Builder.EnvironmentBuilder;
-import com.gabrielhd.worldgen.Builder.GeneratorConfiguration;
-import org.bukkit.Bukkit;
+import com.gabrielhd.worldgen.builder.EnvironmentBuilder;
+import com.gabrielhd.worldgen.builder.GeneratorConfiguration;
 import org.bukkit.Material;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 public class CustomWorldGen extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        this.saveResource("aether.json", false);
-
         EnvironmentBuilder environmentBuilder = new EnvironmentBuilder();
         environmentBuilder.setNatural(true);
         environmentBuilder.setPiglinSafe(false);
@@ -43,12 +35,6 @@ public class CustomWorldGen extends JavaPlugin {
         CustomWorldCreator customWorldCreator = new CustomWorldCreator("test");
         customWorldCreator.setEnvironmentBuilder(environmentBuilder);
         customWorldCreator.setGeneratorConfiguration(generatorConfiguration);
-
-        try {
-            customWorldCreator.generatorSettings(new String(Files.readAllBytes(Paths.get(new File(this.getDataFolder(), "aether.json").toURI()))));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
         this.getServer().getScheduler().runTaskLater(this, customWorldCreator::createWorld, 200L);
     }

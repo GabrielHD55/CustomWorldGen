@@ -1,8 +1,8 @@
 package com.gabrielhd.worldgen;
 
-import com.gabrielhd.worldgen.Builder.EnvironmentBuilder;
-import com.gabrielhd.worldgen.Builder.GeneratorConfiguration;
-import com.gabrielhd.worldgen.Utils.NoiseUtils;
+import com.gabrielhd.worldgen.builder.EnvironmentBuilder;
+import com.gabrielhd.worldgen.builder.GeneratorConfiguration;
+import com.gabrielhd.worldgen.utils.NoiseUtils;
 import com.google.common.collect.ImmutableList;
 import com.mojang.serialization.Lifecycle;
 import net.minecraft.core.*;
@@ -57,6 +57,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.stream.Stream;
 
 public class CustomWorldGenAPI {
 
@@ -284,6 +285,8 @@ public class CustomWorldGenAPI {
         DensityFunction fluid_level_spread = DensityFunctions.noise(NoiseUtils.getNoise(Noises.AQUIFER_FLUID_LEVEL_SPREAD), 0);
         DensityFunction lava = DensityFunctions.noise(NoiseUtils.getNoise(Noises.AQUIFER_LAVA), 0);
 
+
+
         ResourceKey<DensityFunction> shift_x = ResourceKey.create(Registry.DENSITY_FUNCTION_REGISTRY, new ResourceLocation("shift_x"));
         ResourceKey<DensityFunction> shift_z = ResourceKey.create(Registry.DENSITY_FUNCTION_REGISTRY, new ResourceLocation("shift_z"));
         DensityFunction temperature = DensityFunctions.shiftedNoise2d(NoiseUtils.getFunction(iregistry, shift_x), NoiseUtils.getFunction(iregistry, shift_z), 0.25D, NoiseUtils.getNoise(Noises.TEMPERATURE));
@@ -389,5 +392,41 @@ public class CustomWorldGenAPI {
         Registry<NormalNoise.NoiseParameters> iregistry3 = iregistrycustom.registryOrThrow(Registry.NOISE_REGISTRY);
 
         return new NoiseBasedChunkGenerator(iregistry1, iregistry3, MultiNoiseBiomeSource.Preset.OVERWORLD.biomeSource(iregistry, flag), iregistry2.getOrCreateHolder(resourcekey).result().orElseThrow());
+    }
+
+    private static ResourceKey<DensityFunction> createKey(String var0) {
+        return ResourceKey.create(Registry.DENSITY_FUNCTION_REGISTRY, new ResourceLocation(var0));
+    }
+
+    protected static NoiseRouter overworld(Registry<DensityFunction> var0, boolean var1, boolean var2) {
+        DensityFunction var3 = DensityFunctions.noise(NoiseUtils.getNoise(Noises.AQUIFER_BARRIER), 0.5D);
+        DensityFunction var4 = DensityFunctions.noise(NoiseUtils.getNoise(Noises.AQUIFER_FLUID_LEVEL_FLOODEDNESS), 0.67D);
+        DensityFunction var5 = DensityFunctions.noise(NoiseUtils.getNoise(Noises.AQUIFER_FLUID_LEVEL_SPREAD), 0.7142857142857143D);
+        DensityFunction var6 = DensityFunctions.noise(NoiseUtils.getNoise(Noises.AQUIFER_LAVA));
+        DensityFunction var7 = NoiseUtils.getFunction(var0, createKey("shift_x"));
+        DensityFunction var8 = NoiseUtils.getFunction(var0, createKey("shift_z"));
+        DensityFunction var9 = DensityFunctions.shiftedNoise2d(var7, var8, 0.25D, NoiseUtils.getNoise(var1 ? Noises.TEMPERATURE_LARGE : Noises.TEMPERATURE));
+        DensityFunction var10 = DensityFunctions.shiftedNoise2d(var7, var8, 0.25D, NoiseUtils.getNoise(var1 ? Noises.VEGETATION_LARGE : Noises.VEGETATION));
+        DensityFunction var11 = NoiseUtils.getFunction(var0, var1 ? FACTOR_LARGE : (var2 ? FACTOR_AMPLIFIED : FACTOR));
+        DensityFunction var12 = NoiseUtils.getFunction(var0, var1 ? DEPTH_LARGE : (var2 ? DEPTH_AMPLIFIED : DEPTH));
+        DensityFunction var13 = noiseGradientDensity(DensityFunctions.cache2d(var11), var12);
+        DensityFunction var14 = NoiseUtils.getFunction(var0, var1 ? SLOPED_CHEESE_LARGE : (var2 ? SLOPED_CHEESE_AMPLIFIED : SLOPED_CHEESE));
+        DensityFunction var15 = DensityFunctions.min(var14, DensityFunctions.mul(DensityFunctions.constant(5.0D), NoiseUtils.getFunction(var0, ENTRANCES)));
+        DensityFunction var16 = DensityFunctions.rangeChoice(var14, -1000000.0D, 1.5625D, var15, underground(var0, var14));
+        DensityFunction var17 = DensityFunctions.min(postProcess(slideOverworld(var2, var16)), NoiseUtils.getFunction(var0, NOODLE));
+        DensityFunction var18 = NoiseUtils.getFunction(var0, Y);
+        int var19 = Stream.of(OreVeinifier.VeinType.values()).mapToInt((var0x) -> {
+            return var0x.minY;
+        }).min().orElse(-DimensionType.MIN_Y * 2);
+        int var20 = Stream.of(OreVeinifier.VeinType.values()).mapToInt((var0x) -> {
+            return var0x.maxY;
+        }).max().orElse(-DimensionType.MIN_Y * 2);
+        DensityFunction var21 = yLimitedInterpolatable(var18, DensityFunctions.noise(NoiseUtils.getNoise(Noises.ORE_VEININESS), 1.5D, 1.5D), var19, var20, 0);
+        float var22 = 4.0F;
+        DensityFunction var23 = yLimitedInterpolatable(var18, DensityFunctions.noise(getNoise(Noises.ORE_VEIN_A), 4.0D, 4.0D), var19, var20, 0).abs();
+        DensityFunction var24 = yLimitedInterpolatable(var18, DensityFunctions.noise(NoiseUtils.getNoise(Noises.ORE_VEIN_B), 4.0D, 4.0D), var19, var20, 0).abs();
+        DensityFunction var25 = DensityFunctions.add(DensityFunctions.constant(-0.07999999821186066D), DensityFunctions.max(var23, var24));
+        DensityFunction var26 = DensityFunctions.noise(NoiseUtils.getNoise(Noises.ORE_GAP));
+        return new NoiseRouter(var3, var4, var5, var6, var9, var10, NoiseUtils.getFunction(var0, var1 ? CONTINENTS_LARGE : CONTINENTS), NoiseUtils.getFunction(var0, var1 ? EROSION_LARGE : EROSION), var12, NoiseUtils.getFunction(var0, RIDGES), slideOverworld(var2, DensityFunctions.add(var13, DensityFunctions.constant(-0.703125D)).clamp(-64.0D, 64.0D)), var17, var21, var25, var26);
     }
 }
