@@ -25,11 +25,11 @@ public enum DecorationType {
         this.deco = deco;
     }
 
-    protected GenerationStep.Decoration get(){
+    public GenerationStep.Decoration get(){
         return deco;
     }
 
-    protected static DecorationType fromNMSDecoration(GenerationStep.Decoration decoration) {
+    public static DecorationType fromNMSDecoration(GenerationStep.Decoration decoration) {
         return valuemap.get(decoration);
     }
 

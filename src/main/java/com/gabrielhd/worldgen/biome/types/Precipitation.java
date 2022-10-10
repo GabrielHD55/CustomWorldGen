@@ -14,7 +14,7 @@ public enum Precipitation {
         this.precipitation = precipitation;
     }
 
-    protected Biome.Precipitation getPrecipitation(){
+    public Biome.Precipitation getPrecipitation(){
         return this.precipitation;
     }
 }

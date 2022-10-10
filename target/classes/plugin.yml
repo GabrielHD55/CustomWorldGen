@@ -3,3 +3,4 @@ main: com.gabrielhd.worldgen.CustomWorldGen
 author: GabrielHD55
 version: 1.0
 api-version: 1.19
+load: STARTUP

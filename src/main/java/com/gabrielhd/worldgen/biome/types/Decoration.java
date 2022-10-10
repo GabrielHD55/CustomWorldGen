@@ -72,7 +72,7 @@ public enum Decoration {
         feature = BuiltinRegistries.PLACED_FEATURE.get(new ResourceLocation(name().toLowerCase(Locale.ROOT)));
     }
 
-    protected PlacedFeature getFeature(){
+    public PlacedFeature getFeature(){
         return feature;
     }
 }

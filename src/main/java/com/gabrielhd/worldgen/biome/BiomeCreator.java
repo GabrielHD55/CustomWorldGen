@@ -9,6 +9,7 @@ import com.google.common.collect.ImmutableList;
 import com.mojang.serialization.Lifecycle;
 import lombok.Getter;
 import lombok.Setter;
+import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.WritableRegistry;
@@ -22,6 +23,7 @@ import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.craftbukkit.v1_19_R1.CraftParticle;
+import org.bukkit.craftbukkit.v1_19_R1.CraftServer;
 import org.bukkit.craftbukkit.v1_19_R1.CraftSound;
 import org.bukkit.entity.EntityType;
 import org.bukkit.plugin.Plugin;
@@ -30,14 +32,12 @@ import java.awt.*;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.*;
-import java.util.logging.Level;
-
 
 @Getter @Setter
 public class BiomeCreator implements Keyed {
 
     private CaveSound caveSound = null;
-    private BiomeCaveSoundSettings caveSoundSettings = null;
+    private CaveSound.SoundSettings caveSoundSettings = null;
     private Sound ambientSound = null;
     private Particles particles = null;
 
@@ -53,7 +53,6 @@ public class BiomeCreator implements Keyed {
 
     private GrassColorModifier grassColorModifier = GrassColorModifier.NONE;
 
-    private BiomeGeography geography = BiomeGeography.NONE;
     private Precipitation precipitation = Precipitation.NONE;
     private TemperatureModifier temperaturmodifier = TemperatureModifier.NONE;
 
@@ -66,12 +65,9 @@ public class BiomeCreator implements Keyed {
     private Color fog = new Color(0,0,0);
     private Color water = new Color(0,0,0);
 
-    //private float depth = 0.125F;
-    //private float scale = 0.05F;
     private float temper = 0.8F;
     private float downfall = 0.4F;
     private float mobprobability = 0.1F;
-
 
     public BiomeCreator(Plugin plugin, String biomename){
         this.key = new NamespacedKey(plugin, biomename);
@@ -203,53 +199,38 @@ public class BiomeCreator implements Keyed {
         return createBiome(false);
     }
 
-    public CustomBiome createBiome(boolean replace){
+    public CustomBiome createBiome(boolean replace) {
         CraftServer craftServer = (CraftServer) Bukkit.getServer();
         RegistryAccess registryAccess = craftServer.getServer().registryAccess();
-        WritableRegistry<Biome> biomeRegistry = registryAccess.ownedRegistryOrThrow(Registry.BIOME_REGISTRY);
+        WritableRegistry<Biome> biomeRegistry = (WritableRegistry<Biome>) registryAccess.ownedRegistryOrThrow(Registry.BIOME_REGISTRY);
 
         String namespace = getKey().getNamespace();
         String key = getKey().getKey();
-        ResourceKey<Biome> resourceKey = ResourceKey.create(Registry.BIOME_REGISTRY, new ResourceLocation(namespace,key));
+        ResourceKey<Biome> resourceKey = ResourceKey.create(Registry.BIOME_REGISTRY, new ResourceLocation(namespace, key));
 
         Optional<Biome> optionalBiome = BuiltinRegistries.BIOME.getOptional(resourceKey);
 
-        if(optionalBiome.isPresent() && !replace){
+        if (optionalBiome.isPresent() && !replace) {
             Biome endbiome = optionalBiome.get();
-            CustomBiome customBiome = new CustomBiome(endbiome, BuiltinRegistries.BIOME.getResourceKey(endbiome).get());
-            return customBiome;
+            return new CustomBiome(endbiome, BuiltinRegistries.BIOME.getResourceKey(endbiome).orElse(null));
         }
 
         Biome createdBiomeBase = createBiomeBase();
 
-        if(!optionalBiome.isPresent()) {
-            //BuiltinRegistries.BIOME.register(resourceKey,createdBiomeBase,Lifecycle.stable());
-            biomeRegistry.register(resourceKey,createdBiomeBase,Lifecycle.stable());
-            Biome biomedata = BuiltinRegistries.registerMapping(BuiltinRegistries.BIOME, resourceKey, createdBiomeBase);
-            //optionalBiome = biomeRegistry.getOptional(resourceKey);
+        if (optionalBiome.isEmpty()) {
+            biomeRegistry.register(resourceKey, createdBiomeBase, Lifecycle.stable());
+            Biome biomedata = BuiltinRegistries.register(BuiltinRegistries.BIOME, resourceKey, createdBiomeBase).value();
+
             optionalBiome = BuiltinRegistries.BIOME.getOptional(resourceKey);
-         //   System.out.print("was not there: now ? " + optionalBiome.isPresent());
-        }else{
-            Biome targetBiome = optionalBiome.get();
-
-            boolean overwrite = overwriteFields(targetBiome,createdBiomeBase);
-
-            if(overwrite) {
-                AdvancedWorldCreatorAPI.main.getLogger().log(Level.INFO, "Custom-Biome was replaced successfully!");
-            }
-
-         //   AdvancedWorldCreatorAPI.main.getLogger().log(Level.INFO, "Custom-Biome was replaced successfully!");
-            optionalBiome = BuiltinRegistries.BIOME.getOptional(resourceKey);
-          //  System.out.println("Optional: " + optionalBiome.isPresent());
         }
 
+        if(optionalBiome.isEmpty()) return null;
 
-        Biome endbiome = optionalBiome.get();
+        Biome targetBiome = optionalBiome.get();
+        overwriteFields(targetBiome, createdBiomeBase);
 
-        return new CustomBiome(endbiome, BuiltinRegistries.BIOME.getResourceKey(endbiome).get());
+        return new CustomBiome(targetBiome, BuiltinRegistries.BIOME.getResourceKey(targetBiome).orElse(null));
     }
-
-
 
     private boolean overwriteFields(Biome target, Biome input){
         try {
@@ -264,7 +245,7 @@ public class BiomeCreator implements Keyed {
             }
 
             return true;
-        }catch (Exception ex){
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
         return false;
@@ -284,90 +265,84 @@ public class BiomeCreator implements Keyed {
         }
     }
 
-
-
     private Biome createBiomeBase() {
         BiomeGenerationSettings.Builder bisege = (new BiomeGenerationSettings.Builder());
 
         for(DecorationType decorationType : this.biomeFeatures.keySet()){
             for(Decoration biomeFeature : biomeFeatures.get(decorationType)){
-                bisege.addFeature(decorationType.get(), biomeFeature.getFeature());
+                bisege.addFeature(decorationType.get(), Holder.direct(biomeFeature.getFeature()));
             }
         }
-        for(DecorationType decorationType : getAllCustomBiomeFeatures().keySet()){
+
+        for(DecorationType decorationType : this.biomeFeatures.keySet()){
             for(CustomBiomeFeature biomeFeature : biomeFeaturesNMS.get(decorationType)){
-                bisege.addFeature(decorationType.get(),biomeFeature.getFeature());
+                bisege.addFeature(decorationType.get(), Holder.direct(biomeFeature.getFeature()));
             }
         }
 
         MobSpawnSettings.Builder bisemo = new MobSpawnSettings.Builder();
 
-        bisemo.creatureGenerationProbability(getMobSpawnProbability());
+        bisemo.creatureGenerationProbability(mobprobability);
 
         for(BiomeEntity be : getBiomeEntities()){
-            net.minecraft.world.entity.EntityType nmsentity = convertBukkitEntityTypeToNMS(be.getEntityType());
+            net.minecraft.world.entity.EntityType nmsentity = convertBukkitEntityTypeToNMS(be.getType());
 
             if(nmsentity != null){
                 MobCategory enumCreatureType = nmsentity.getCategory();
 
-                bisemo.addSpawn(enumCreatureType, new MobSpawnSettings.SpawnerData(nmsentity, be.getWeight(), be.getMinCount(), be.getMaxCount()));
-
+                bisemo.addSpawn(enumCreatureType, new MobSpawnSettings.SpawnerData(nmsentity, be.getWeight(), be.getMincount(), be.getMaxcount()));
             }
-
         }
-
-
 
         BiomeSpecialEffects.Builder bf = new BiomeSpecialEffects.Builder();
+        bf.fogColor(colorToHexaDecimal(fog));
+        bf.waterColor(colorToHexaDecimal(water));
+        bf.waterFogColor(colorToHexaDecimal(waterfog));
+        bf.skyColor(colorToHexaDecimal(sky));
 
-
-        bf.fogColor(colorToHexaDecimal(getFogColor()));
-        bf.waterColor(colorToHexaDecimal(getWaterColor()));
-        bf.waterFogColor(colorToHexaDecimal(getWaterFogColor()));
-        bf.skyColor(colorToHexaDecimal(getSkyColor()));
-
-        if(getFoliageColor() != null) {
-            bf.foliageColorOverride(colorToHexaDecimal(getFoliageColor()));
+        if(foliage != null) {
+            bf.foliageColorOverride(colorToHexaDecimal(foliage));
         }
-        if(getGrassColor() != null) {
-            bf.grassColorOverride(colorToHexaDecimal(getGrassColor()));
+        if(grass != null) {
+            bf.grassColorOverride(colorToHexaDecimal(grass));
         }
 
-        Music music = getCustomMusic();
+        Music music = getMusic();
         if(music != null) {
-            bf.backgroundMusic(new net.minecraft.sounds.Music(CraftSound.getSoundEffect(music.getSound()),music.getMinDelay(),music.getMaxDelay(),music.isReplacingCurrentMusic()));
+            bf.backgroundMusic(new net.minecraft.sounds.Music(CraftSound.getSoundEffect(music.getSound()),music.getMindelay(), music.getMaxdelay(), music.isReplace_current_music()));
         }
+
         CaveSound caveSound = getCaveSound();
         if(caveSound != null) {
-            bf.ambientAdditionsSound(new AmbientAdditionsSettings(CraftSound.getSoundEffect(caveSound.getSound()),caveSound.getTickChance()));
+            bf.ambientAdditionsSound(new AmbientAdditionsSettings(CraftSound.getSoundEffect(caveSound.getSound()), caveSound.getTickchance()));
         }
 
-        BiomeCaveSoundSettings caveSoundSettings = getCaveSoundSettings();
+        CaveSound.SoundSettings caveSoundSettings = getCaveSoundSettings();
         if(caveSoundSettings != null){
             bf.ambientMoodSound(new AmbientMoodSettings(CraftSound.getSoundEffect(caveSoundSettings.getSound()),caveSoundSettings.getTickDelay(),caveSoundSettings.getBlockSearchExtent(),caveSoundSettings.getOffset()));
         }
+
         Sound ambientSound = getAmbientSound();
         if(ambientSound != null) {
             bf.ambientLoopSound(CraftSound.getSoundEffect(ambientSound));
         }
+
         Particles particles = getParticles();
         if(particles != null) {
             bf.ambientParticle(new AmbientParticleSettings(CraftParticle.toNMS(particles.getParticle()), particles.getQuantity()));
         }
 
-        bf.grassColorModifier(getBiomeGrassColorModifier().getGrassColorModifier());
+        bf.grassColorModifier(grassColorModifier.getGrassColorModifier());
 
         Biome.BiomeBuilder bb = new Biome.BiomeBuilder();
 
-
-        bb.biomeCategory(getGeography().getGeography());
-        bb.precipitation(getPrecipitation().getPrecipitation());
-        bb.temperatureAdjustment(getTemperatureModifier().getTemperaturModifier());
+        bb.precipitation(precipitation.getPrecipitation());
+        bb.temperatureAdjustment(temperaturmodifier.getTemperaturModifier());
         bb.specialEffects(bf.build());
         bb.generationSettings(bisege.build());
         bb.mobSpawnSettings(bisemo.build());
 
-        bb.temperature(getTemperature());
+        bb.temperature(temper);
         bb.downfall(getDownfall());
 
         return bb.build();

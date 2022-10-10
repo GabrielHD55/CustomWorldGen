@@ -14,7 +14,7 @@ public enum GrassColorModifier {
         this.modifier = modi;
     }
 
-    protected BiomeSpecialEffects.GrassColorModifier getGrassColorModifier() {
+    public BiomeSpecialEffects.GrassColorModifier getGrassColorModifier() {
         return this.modifier;
     }
 }

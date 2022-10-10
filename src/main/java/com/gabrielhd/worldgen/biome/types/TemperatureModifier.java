@@ -13,7 +13,7 @@ public enum TemperatureModifier {
         this.modifier = modifier;
     }
 
-    protected Biome.TemperatureModifier getTemperaturModifier(){
+    public Biome.TemperatureModifier getTemperaturModifier(){
         return this.modifier;
     }
 }

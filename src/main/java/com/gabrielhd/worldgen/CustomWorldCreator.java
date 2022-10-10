@@ -1,25 +1,23 @@
 package com.gabrielhd.worldgen;
 
+import com.gabrielhd.worldgen.biome.CustomBiomeProvider;
 import com.gabrielhd.worldgen.builder.EnvironmentBuilder;
 import com.gabrielhd.worldgen.builder.GeneratorConfiguration;
+import lombok.Getter;
+import lombok.Setter;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
 
+
+@Getter @Setter
 public class CustomWorldCreator extends WorldCreator {
 
     private EnvironmentBuilder environmentBuilder = null;
+    private CustomBiomeProvider customBiomeProvider = null;
     private GeneratorConfiguration generatorConfiguration = null;
 
     public CustomWorldCreator(String name) {
         super(name);
-    }
-
-    public void setGeneratorConfiguration(GeneratorConfiguration generatorConfiguration) {
-        this.generatorConfiguration = generatorConfiguration;
-    }
-
-    public GeneratorConfiguration getGeneratorConfiguration() {
-        return generatorConfiguration;
     }
 
     public void setEnvironmentBuilder(EnvironmentBuilder environmentBuilder) {
@@ -29,10 +27,6 @@ public class CustomWorldCreator extends WorldCreator {
         } else {
             environment(World.Environment.CUSTOM);
         }
-    }
-
-    public EnvironmentBuilder getEnvironmentBuilder() {
-        return environmentBuilder;
     }
 
     @Override
